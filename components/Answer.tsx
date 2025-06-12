@@ -1,4 +1,4 @@
-import CorrectButton from "./CorrectButton.tsx";
+import CorrectButton from "./CorrectButton";
 
 
 interface AnswerProps {

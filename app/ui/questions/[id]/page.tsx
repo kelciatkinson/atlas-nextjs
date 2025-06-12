@@ -29,6 +29,7 @@ export default async function Page({
           text={answer.answer}
           votes={answer.votes}
           question_id={question.id}
+          is_correct={answer.id === question.correct_answer_id}
         />
       ))}
     </div>
