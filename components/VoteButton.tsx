@@ -1,9 +1,19 @@
+'use client';
+
 import { HandThumbUpIcon } from "@heroicons/react/24/outline";
 import { addVote } from "@/lib/actions";
 
 export default function VoteButton({ id }: { id: string }) {
+  const handleSubmit = async (formData: FormData) => {
+    await addVote(formData);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <form action={addVote}>
+    <form action={handleSubmit} onClick={handleClick}>
       <input type="hidden" name="id" value={id} />
       <button
         type="submit"

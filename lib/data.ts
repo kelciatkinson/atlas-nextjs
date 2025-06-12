@@ -1,5 +1,5 @@
 import { sql } from "@vercel/postgres";
-import { Question, Topic, User } from "./definitions";
+import { Question, Topic, User, Answer } from "./definitions";
 
 export async function fetchUser(email: string): Promise<User | undefined> {
   try {
@@ -42,6 +42,17 @@ export async function fetchQuestions(id: string) {
   }
 }
 
+export async function fetchQuestion(id: string) {
+  try {
+    const data =
+      await sql<Question>`SELECT * FROM questions WHERE id = ${id} LIMIT 1`;
+    return data.rows[0] || null;
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch question.");
+  }
+}
+
 export async function insertQuestion(
   question: Pick<Question, "title" | "topic_id" | "votes">
 ) {
@@ -67,6 +78,43 @@ export async function insertTopic(topic: Pick<Topic, "title">) {
   }
 }
 
+export async function fetchAnswers(questionId: string) {
+  try {
+    const data = await sql<Answer>`
+      SELECT
+        answers.*, 
+        CASE 
+          WHEN answers.id = (SELECT answer_id FROM questions WHERE id = ${questionId}) 
+          THEN true 
+          ELSE false 
+        END AS is_correct
+      FROM answers 
+      WHERE question_id = ${questionId}
+      ORDER BY is_correct DESC
+    `;
+    return data.rows;
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch answers.");
+  }
+}
+
+export async function insertAnswer(
+  answer: Pick<Answer, "id" | "answer">
+) {
+  try {
+    const data = await sql<Answer>`
+      INSERT INTO answers (question_id, answer) 
+      VALUES (${answer.id}, ${answer.answer})
+      RETURNING *
+    `;
+    return data.rows[0];
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to add answer.");
+  }
+}
+
 export async function incrementVotes(id: string) {
   try {
     const data =
@@ -75,5 +123,25 @@ export async function incrementVotes(id: string) {
   } catch (error) {
     console.error("Database Error:", error);
     throw new Error("Failed to increment votes.");
+  }
+}
+
+export async function updateCorrectAnswer(questionId: string, answerId: string) {
+  try {
+    console.log('Updating correct answer:', { questionId, answerId });
+    
+    const data = await sql`
+      UPDATE questions 
+      SET answer_id = ${answerId}
+      WHERE id = ${questionId}
+      RETURNING *
+    `;
+    
+    console.log('Update result:', data.rows);
+    
+    return data.rows[0];
+  } catch (error) {
+    console.error("Specific Database Error:", error);
+    throw error;
   }
 }
